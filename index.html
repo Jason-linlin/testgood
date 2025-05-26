@@ -2,19 +2,19 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>crypto</title>
+  <title>Crypto</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
+    body { font-family: Arial; padding: 20px; max-width: 900px; margin: auto; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f5f5f5; }
-    input { padding: 4px; margin-right: 4px; }
-    .green { color: green; }
-    .red { color: red; }
+    input, select, button { padding: 4px; margin-right: 6px; }
+    .green { color: green; font-weight: bold; }
+    .red { color: red; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>crypto</h1>
+  <h1>Crypto</h1>
 
   <h3>新增購買紀錄</h3>
   幣種：
@@ -47,7 +47,7 @@
 
   <script>
     const symbols = ["btc", "eth", "ada", "sol", "xrp", "nxpc"];
-    const holdings = {};  // { symbol: { totalCost: x, totalQty: y } }
+    const holdings = {};
 
     async function fetchPrices() {
       const url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano,solana,ripple&vs_currencies=usd";
@@ -59,7 +59,7 @@
         ada: json.cardano.usd,
         sol: json.solana.usd,
         xrp: json.ripple.usd,
-        nxpc: 1.5398  // 自訂價格（從你提供資料來）
+        nxpc: 1.5398  // 自訂 NXPC 價格
       };
     }
 
@@ -68,11 +68,18 @@
       const cost = parseFloat(document.getElementById("cost").value);
       const amount = parseFloat(document.getElementById("amount").value);
 
+      if (!symbol || isNaN(cost) || isNaN(amount)) {
+        alert("請輸入正確的成本與數量！");
+        return;
+      }
+
       if (!holdings[symbol]) holdings[symbol] = { totalCost: 0, totalQty: 0 };
       holdings[symbol].totalCost += cost;
       holdings[symbol].totalQty += amount;
 
       renderTable();
+      document.getElementById("cost").value = "";
+      document.getElementById("amount").value = "";
     }
 
     async function renderTable() {
@@ -83,7 +90,7 @@
       symbols.forEach(sym => {
         const h = holdings[sym] || { totalCost: 0, totalQty: 0 };
         const avg = h.totalQty ? h.totalCost / h.totalQty : "-";
-        const price = prices[sym];
+        const price = prices[sym] || 0;
         const value = h.totalQty * price;
         const profit = value - h.totalCost;
         const percent = h.totalCost ? (profit / h.totalCost) * 100 : 0;
@@ -102,7 +109,6 @@
       });
     }
 
-    // 初始化表格
     renderTable();
   </script>
 </body>
