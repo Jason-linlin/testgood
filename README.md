@@ -1,1 +1,109 @@
-# Cryptocurrency
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>加密貨幣盈虧試算</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f5f5f5; }
+    input { padding: 4px; margin-right: 4px; }
+    .green { color: green; }
+    .red { color: red; }
+  </style>
+</head>
+<body>
+  <h1>加密貨幣盈虧試算</h1>
+
+  <h3>新增購買紀錄</h3>
+  幣種：
+  <select id="symbol">
+    <option value="btc">BTC</option>
+    <option value="eth">ETH</option>
+    <option value="ada">ADA</option>
+    <option value="sol">SOL</option>
+    <option value="xrp">XRP</option>
+    <option value="nxpc">NXPC</option>
+  </select>
+  成本（USDT）：<input type="number" id="cost" />
+  數量：<input type="number" id="amount" step="any" />
+  <button onclick="addRecord()">新增</button>
+
+  <table id="resultTable">
+    <thead>
+      <tr>
+        <th>幣種</th>
+        <th>購買總量</th>
+        <th>購買總成本 (USDT)</th>
+        <th>平均成本 (每顆)</th>
+        <th>即時幣價</th>
+        <th>盈虧金額 (USDT)</th>
+        <th>盈虧百分比</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const symbols = ["btc", "eth", "ada", "sol", "xrp", "nxpc"];
+    const holdings = {};  // { symbol: { totalCost: x, totalQty: y } }
+
+    async function fetchPrices() {
+      const url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano,solana,ripple&vs_currencies=usd";
+      const res = await fetch(url);
+      const json = await res.json();
+      return {
+        btc: json.bitcoin.usd,
+        eth: json.ethereum.usd,
+        ada: json.cardano.usd,
+        sol: json.solana.usd,
+        xrp: json.ripple.usd,
+        nxpc: 1.5398  // 自訂價格（從你提供資料來）
+      };
+    }
+
+    function addRecord() {
+      const symbol = document.getElementById("symbol").value;
+      const cost = parseFloat(document.getElementById("cost").value);
+      const amount = parseFloat(document.getElementById("amount").value);
+
+      if (!holdings[symbol]) holdings[symbol] = { totalCost: 0, totalQty: 0 };
+      holdings[symbol].totalCost += cost;
+      holdings[symbol].totalQty += amount;
+
+      renderTable();
+    }
+
+    async function renderTable() {
+      const prices = await fetchPrices();
+      const tbody = document.querySelector("#resultTable tbody");
+      tbody.innerHTML = "";
+
+      symbols.forEach(sym => {
+        const h = holdings[sym] || { totalCost: 0, totalQty: 0 };
+        const avg = h.totalQty ? h.totalCost / h.totalQty : "-";
+        const price = prices[sym];
+        const value = h.totalQty * price;
+        const profit = value - h.totalCost;
+        const percent = h.totalCost ? (profit / h.totalCost) * 100 : 0;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${sym.toUpperCase()}</td>
+          <td>${h.totalQty.toFixed(4)}</td>
+          <td>${h.totalCost.toFixed(2)}</td>
+          <td>${avg === "-" ? "-" : avg.toFixed(2)}</td>
+          <td>${price.toFixed(2)}</td>
+          <td class="${profit >= 0 ? 'green' : 'red'}">${profit.toFixed(2)}</td>
+          <td class="${profit >= 0 ? 'green' : 'red'}">${percent.toFixed(2)}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 初始化表格
+    renderTable();
+  </script>
+</body>
+</html>
